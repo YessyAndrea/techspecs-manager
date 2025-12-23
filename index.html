@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TechSpecs Manager</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f5fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+    }
+    header {
+      background: #212946;
+      color: #fff;
+      padding: 1.6rem 2rem;
+      text-align: center;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 0;
+      height: 100%;
+    }
+    .form-section {
+      background: #fff;
+      padding: 2rem 2rem 2rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 2px solid #ececee;
+      height: 100%;
+    }
+    form {
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.3rem;
+    }
+    label {
+      font-weight: 500;
+      margin-bottom: 0.2rem;
+    }
+    input, select {
+      padding: 0.7rem;
+      border: 1px solid #b4b4c8;
+      border-radius: 4px;
+      font-size: 1rem;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+      background: #f7f9fa;
+    }
+    button {
+      background: #2f4cdd;
+      color: #fff;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 5px;
+      padding: 0.8rem 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 0.7rem;
+    }
+    button:hover {
+      background: #212946;
+    }
+    .sidebar {
+      background: #f8fafc;
+      padding: 2rem 1.5rem;
+      overflow-y: auto;
+      height: 100%;
+    }
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      margin-bottom: 2rem;
+      color: #212946;
+    }
+    .servers-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .server-card {
+      background: #fff;
+      border-radius: 7px;
+      box-shadow: 0 2px 6px rgba(33,44,99,0.07);
+      padding: 1.2rem 1.2rem 1.1rem 1.2rem;
+      border-left: 5px solid #2f4cdd;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      position: relative;
+    }
+    .server-card .name {
+      font-weight: bold;
+      color: #2f4cdd;
+      font-size: 1.1rem;
+    }
+    .server-card .spec {
+      color: #222c;
+      font-size: 0.99rem;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e33d3d;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 27px;
+      height: 27px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: background 0.15s;
+    }
+    .delete-btn:hover {
+      background: #a71d2a;
+    }
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      .form-section {
+        border-right: none;
+        border-bottom: 2px solid #ececee;
+      }
+      .sidebar {
+        padding-top: 1rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .form-section, .sidebar {
+        padding: 1rem;
+      }
+      .servers-list {
+        gap: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>TechSpecs Manager</h1>
+    </header>
+    <main>
+      <section class="form-section">
+        <form id="serverForm">
+          <label for="nombre">Nombre del Servidor</label>
+          <input type="text" id="nombre" name="nombre" required>
+
+          <label for="cpu">CPU (mínimo 2 núcleos)</label>
+          <input type="number" id="cpu" name="cpu" min="2" required>
+
+          <label for="ram">RAM en GB (mínimo 4GB)</label>
+          <input type="number" id="ram" name="ram" min="4" required>
+
+          <label for="almacenamiento">Almacenamiento</label>
+          <select id="almacenamiento" name="almacenamiento" required>
+            <option value="">Selecciona</option>
+            <option value="ssd">SSD</option>
+            <option value="hdd">HDD</option>
+          </select>
+
+          <label for="presupuesto">Presupuesto (€) (máx 700€)</label>
+          <input type="number" id="presupuesto" name="presupuesto" min="0" max="700" required>
+
+          <button type="submit">Registrar Servidor</button>
+        </form>
+      </section>
+      <aside class="sidebar">
+        <h2>Servidores Registrados</h2>
+        <div id="servers-list" class="servers-list">
+          <!-- Las tarjetas de servidores aparecerán aquí -->
+        </div>
+      </aside>
+    </main>
+  </div>
+  <script>
+    // Cambia la URL según corresponda si usas un puerto distinto
+    const API_URL = 'https://694a53461282f890d2d851e4.mockapi.io/servidores';
+
+    const form = document.getElementById('serverForm');
+    const serversList = document.getElementById('servers-list');
+
+    // Renderizar card de servidor
+    function renderServerCard(server) {
+      const card = document.createElement('div');
+      card.className = 'server-card';
+      card.dataset.id = server.id;
+
+      card.innerHTML = `
+        <button class="delete-btn" title="Eliminar">&#10005;</button>
+        <div class="name">${server.nombre}</div>
+        <div class="spec"><strong>CPU:</strong> ${server.cpu} núcleos</div>
+        <div class="spec"><strong>RAM:</strong> ${server.ram} GB</div>
+        <div class="spec"><strong>Almacenamiento:</strong> ${server.almacenamiento.toUpperCase()}</div>
+        <div class="spec"><strong>Presupuesto:</strong> €${server.presupuesto}</div>
+      `;
+
+      // Eliminar funcionalidad
+      const deleteBtn = card.querySelector('.delete-btn');
+      deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (confirm('¿Quieres eliminar este servidor?')) {
+          await deleteServer(server.id);
+        }
+      });
+
+      return card;
+    }
+
+    // Mostrar todos los servidores
+    async function fetchServers() {
+      serversList.innerHTML = '<div style="color:#797a8d;font-size:1rem;">Cargando servidores...</div>';
+      try {
+        const resp = await fetch(API_URL);
+        if (!resp.ok) throw new Error();
+        const servidores = await resp.json();
+        serversList.innerHTML = '';
+        if (!Array.isArray(servidores) || servidores.length === 0) {
+          serversList.innerHTML = '<div style="color:#797a8d;">No hay servidores registrados.</div>';
+        } else {
+          servidores.forEach((srv) => {
+            serversList.appendChild(renderServerCard(srv));
+          });
+        }
+      } catch (err) {
+        serversList.innerHTML = '<div style="color:#a71d2a;">Error al cargar servidores :(</div>';
+      }
+    }
+
+    // Crear servidor - POST
+    async function createServer(data) {
+      try {
+        const resp = await fetch(API_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        });
+        if (!resp.ok) throw new Error();
+        const saved = await resp.json();
+        serversList.appendChild(renderServerCard(saved));
+      } catch {
+        alert('No se pudo registrar el servidor.');
+      }
+    }
+
+    // Eliminar servidor - DELETE
+    async function deleteServer(id) {
+      try {
+        const resp = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (!resp.ok) throw new Error();
+        const card = serversList.querySelector(`.server-card[data-id="${id}"]`);
+        if (card) card.remove();
+      } catch {
+        alert('No se pudo eliminar el servidor.');
+      }
+    }
+
+    // Escuchar submit
+    form.addEventListener('submit', async function(event) {
+      event.preventDefault();
+      // Leer valores
+      const nombre = document.getElementById('nombre').value.trim();
+      const cpu = parseInt(document.getElementById('cpu').value, 10);
+      const ram = parseInt(document.getElementById('ram').value, 10);
+      const almacenamiento = document.getElementById('almacenamiento').value;
+      const presupuesto = parseFloat(document.getElementById('presupuesto').value);
+
+      // Validaciones
+      if(cpu < 2) {
+        alert('CPU debe ser mínimo 2 núcleos.');
+        return;
+      }
+      if(ram < 4) {
+        alert('RAM debe ser mínimo 4 GB.');
+        return;
+      }
+      if(!['ssd', 'hdd'].includes(almacenamiento)) {
+        alert('Debes seleccionar un tipo de almacenamiento.');
+        return;
+      }
+      if(isNaN(presupuesto) || presupuesto < 0) {
+        alert('Debes indicar un presupuesto válido.');
+        return;
+      }
+      if(presupuesto > 700) {
+        alert('El presupuesto máximo permitido es de 700€.');
+        return;
+      }
+      // Envía al servidor
+      await createServer({
+        nombre, cpu, ram, almacenamiento, presupuesto
+      });
+      form.reset();
+    });
+
+    // Inicial
+    fetchServers();
+  </script>
+</body>
+</html>
